@@ -1,6 +1,7 @@
 package com.baoyachi.stepview.demo;
 
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -8,8 +9,8 @@ import android.view.MenuItem;
 
 import com.baoyachi.stepview.demo.fragment.DrawCanvasFragment;
 import com.baoyachi.stepview.demo.fragment.HorizontalStepviewFragment;
-import com.baoyachi.stepview.demo.fragment.VerticalStepViewFragment;
-import com.baoyachi.stepview.demo.fragment.VerticalStepViewSnapshotFragment;
+import com.baoyachi.stepview.demo.fragment.VerticalStepViewReverseFragment;
+import com.baoyachi.stepview.demo.fragment.VerticalStepViewFrowardFragment;
 
 /**
  * 日期：16/6/22 16:01
@@ -19,18 +20,13 @@ import com.baoyachi.stepview.demo.fragment.VerticalStepViewSnapshotFragment;
 public class MainActivity extends AppCompatActivity
 {
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        //        HorizontalStepviewFragment mHorizontalStepviewFragment = new HorizontalStepviewFragment();
-        //        mFragmentTransaction = getFragmentManager().beginTransaction();
-        //        mFragmentTransaction.replace(R.id.container, mHorizontalStepviewFragment).commit();
-        VerticalStepViewFragment mVerticalStepViewFragment = new VerticalStepViewFragment();
+        VerticalStepViewReverseFragment mVerticalStepViewFragment = new VerticalStepViewReverseFragment();
         getFragmentManager().beginTransaction().replace(R.id.container, mVerticalStepViewFragment).commit();
     }
 
@@ -44,10 +40,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {
-        VerticalStepViewFragment mVerticalStepViewFragment;
+        VerticalStepViewReverseFragment mVerticalStepViewFragment;
         DrawCanvasFragment mDrawCanvasFragment;
         HorizontalStepviewFragment mHorizontalStepviewFragment;
-        VerticalStepViewSnapshotFragment mVerticalStepViewSnapshotFragment;
+        VerticalStepViewFrowardFragment mVerticalStepViewReverseFragment;
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         int itemId = item.getItemId();
         switch(itemId)
@@ -61,14 +57,20 @@ public class MainActivity extends AppCompatActivity
                 mDrawCanvasFragment = new DrawCanvasFragment();
                 fragmentTransaction.replace(R.id.container, mDrawCanvasFragment).commit();
                 break;
-            case R.id.action_vertical_stepview:
-                mVerticalStepViewFragment = new VerticalStepViewFragment();
+            case R.id.action_vertical_reverse:
+                mVerticalStepViewFragment = new VerticalStepViewReverseFragment();
                 fragmentTransaction.replace(R.id.container, mVerticalStepViewFragment).commit();
                 break;
-            case R.id.action_vertical_stepview_snapshot:
-                mVerticalStepViewSnapshotFragment = new VerticalStepViewSnapshotFragment();
-                fragmentTransaction.replace(R.id.container, mVerticalStepViewSnapshotFragment).commit();
+
+            case R.id.action_vertical_forward:
+                mVerticalStepViewReverseFragment = new VerticalStepViewFrowardFragment();
+                fragmentTransaction.replace(R.id.container, mVerticalStepViewReverseFragment).commit();
                 break;
+
+            case R.id.action_test_horizontal_stepview:
+                startActivity(new Intent(this,TestHorizontalStepViewActivity.class));
+                break;
+
 
         }
         return super.onOptionsItemSelected(item);

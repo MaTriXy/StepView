@@ -11,6 +11,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 
@@ -24,6 +25,8 @@ import java.util.List;
  */
 public class VerticalStepViewIndicator extends View
 {
+    private final String TAG_NAME = this.getClass().getSimpleName();
+
     //定义默认的高度   definition default height
     private int defaultStepIndicatorNum = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, getResources().getDisplayMetrics());
 
@@ -52,6 +55,9 @@ public class VerticalStepViewIndicator extends View
 
     private OnDrawIndicatorListener mOnDrawListener;
     private Rect mRect;
+    private int mHeight;//这个控件的动态高度    this view dynamic height
+    private boolean mIsReverseDraw;//is reverse draw this view;
+
 
     /**
      * 设置监听
@@ -125,6 +131,8 @@ public class VerticalStepViewIndicator extends View
         mCompleteIcon = ContextCompat.getDrawable(getContext(), R.drawable.complted);//已经完成的icon
         mAttentionIcon = ContextCompat.getDrawable(getContext(), R.drawable.attention);//正在进行的icon
         mDefaultIcon = ContextCompat.getDrawable(getContext(), R.drawable.default_icon);//未完成的icon
+
+        mIsReverseDraw = true;//default draw
     }
 
 
@@ -132,50 +140,61 @@ public class VerticalStepViewIndicator extends View
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
     {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        Log.i(TAG_NAME,"onMeasure");
         int width = defaultStepIndicatorNum;
-        int height = 0;
-        if(mStepNum>0)
+        mHeight = 0;
+        if(mStepNum > 0)
         {
             //dynamic measure VerticalStepViewIndicator height
-            height = (int) (getPaddingTop()+getPaddingBottom() + mCircleRadius * 2 * mStepNum +(mStepNum-1)*mLinePadding);
+            mHeight = (int) (getPaddingTop() + getPaddingBottom() + mCircleRadius * 2 * mStepNum + (mStepNum - 1) * mLinePadding);
         }
         if(MeasureSpec.UNSPECIFIED != MeasureSpec.getMode(widthMeasureSpec))
         {
             width = Math.min(width, MeasureSpec.getSize(widthMeasureSpec));
         }
-        if(MeasureSpec.UNSPECIFIED != MeasureSpec.getMode(heightMeasureSpec))
-        {
-            height = MeasureSpec.getSize(heightMeasureSpec);
-        }
-        setMeasuredDimension(width, height);
+        setMeasuredDimension(width, mHeight);
 
     }
+
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
         super.onSizeChanged(w, h, oldw, oldh);
+        Log.i(TAG_NAME,"onSizeChanged");
         mCenterX = getWidth() / 2;
         mLeftY = mCenterX - (mCompletedLineHeight / 2);
         mRightY = mCenterX + (mCompletedLineHeight / 2);
 
         for(int i = 0; i < mStepNum; i++)
         {
-            //先计算全部最左边的padding值（getWidth()-（圆形直径+两圆之间距离）*2）
-            //add to list
-            mCircleCenterPointPositionList.add( mCircleRadius + i * mCircleRadius * 2 + i * mLinePadding);
+            //reverse draw VerticalStepViewIndicator
+            if(mIsReverseDraw)
+            {
+                mCircleCenterPointPositionList.add(mHeight - (mCircleRadius + i * mCircleRadius * 2 + i * mLinePadding));
+            } else
+            {
+                mCircleCenterPointPositionList.add(mCircleRadius + i * mCircleRadius * 2 + i * mLinePadding);
+            }
         }
         /**
          * set listener
          */
-        mOnDrawListener.ondrawIndicator();
+        if(mOnDrawListener != null)
+        {
+            mOnDrawListener.ondrawIndicator();
+        }
     }
 
     @Override
     protected void onDraw(Canvas canvas)
     {
         super.onDraw(canvas);
-        mOnDrawListener.ondrawIndicator();
+        Log.i(TAG_NAME,"onDraw");
+        if(mOnDrawListener != null)
+        {
+            mOnDrawListener.ondrawIndicator();
+        }
         mUnCompletedPaint.setColor(mUnCompletedLineColor);
         mCompletedPaint.setColor(mCompletedLineColor);
 
@@ -190,12 +209,27 @@ public class VerticalStepViewIndicator extends View
             if(i < mComplectingPosition)//判断在完成之前的所有点
             {
                 //判断在完成之前的所有点，画完成的线，这里是矩形,很细的矩形，类似线，为了做区分，好看些
-                canvas.drawRect(mLeftY, preComplectedXPosition + mCircleRadius - 10, mRightY, afterComplectedXPosition - mCircleRadius + 10, mCompletedPaint);
+                if(mIsReverseDraw)
+                {
+                    canvas.drawRect(mLeftY, afterComplectedXPosition + mCircleRadius - 10, mRightY, preComplectedXPosition - mCircleRadius + 10, mCompletedPaint);
+                } else
+                {
+                    canvas.drawRect(mLeftY, preComplectedXPosition + mCircleRadius - 10, mRightY, afterComplectedXPosition - mCircleRadius + 10, mCompletedPaint);
+                }
             } else
             {
-                mPath.moveTo(mCenterX, preComplectedXPosition + mCircleRadius);
-                mPath.lineTo(mCenterX, afterComplectedXPosition - mCircleRadius);
-                canvas.drawPath(mPath, mUnCompletedPaint);
+                if(mIsReverseDraw)
+                {
+                    mPath.moveTo(mCenterX, afterComplectedXPosition + mCircleRadius);
+                    mPath.lineTo(mCenterX, preComplectedXPosition - mCircleRadius);
+                    canvas.drawPath(mPath, mUnCompletedPaint);
+                } else
+                {
+                    mPath.moveTo(mCenterX, preComplectedXPosition + mCircleRadius);
+                    mPath.lineTo(mCenterX, afterComplectedXPosition - mCircleRadius);
+                    canvas.drawPath(mPath, mUnCompletedPaint);
+                }
+
             }
         }
         //-----------------------画线-------draw line-----------------------------------------------
@@ -243,7 +277,17 @@ public class VerticalStepViewIndicator extends View
     public void setStepNum(int stepNum)
     {
         this.mStepNum = stepNum;
-        invalidate();
+        requestLayout();
+    }
+
+    /**
+     *
+     * 设置线间距的比例系数 set linePadding proportion
+     * @param linePaddingProportion
+     */
+    public void setIndicatorLinePaddingProportion(float linePaddingProportion)
+    {
+        this.mLinePadding = linePaddingProportion * defaultStepIndicatorNum;
     }
 
     /**
@@ -254,7 +298,7 @@ public class VerticalStepViewIndicator extends View
     public void setComplectingPosition(int complectingPosition)
     {
         this.mComplectingPosition = complectingPosition;
-        invalidate();
+        requestLayout();
     }
 
     /**
@@ -275,6 +319,15 @@ public class VerticalStepViewIndicator extends View
     public void setCompletedLineColor(int completedLineColor)
     {
         this.mCompletedLineColor = completedLineColor;
+    }
+
+    /**
+     * is reverse draw 是否倒序画
+     */
+    public void reverseDraw(boolean isReverseDraw)
+    {
+        this.mIsReverseDraw = isReverseDraw;
+        invalidate();
     }
 
     /**

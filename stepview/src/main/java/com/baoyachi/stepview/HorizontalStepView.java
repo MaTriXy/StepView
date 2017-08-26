@@ -5,6 +5,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,22 +13,25 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.baoyachi.stepview.bean.StepBean;
+
 import java.util.List;
 
 /**
  * 日期：16/6/22 15:47
- * <p>
+ * <p/>
  * 描述：StepView
  */
 public class HorizontalStepView extends LinearLayout implements HorizontalStepsViewIndicator.OnDrawIndicatorListener
 {
-
     private RelativeLayout mTextContainer;
     private HorizontalStepsViewIndicator mStepsViewIndicator;
-    private List<String> mTexts;
+    private List<StepBean> mStepBeanList;
     private int mComplectingPosition;
     private int mUnComplectedTextColor = ContextCompat.getColor(getContext(), R.color.uncompleted_text_color);//定义默认未完成文字的颜色;
     private int mComplectedTextColor = ContextCompat.getColor(getContext(), android.R.color.white);//定义默认完成文字的颜色;
+    private int mTextSize = 14;//default textSize
+    private TextView mTextView;
 
     public HorizontalStepView(Context context)
     {
@@ -51,34 +55,21 @@ public class HorizontalStepView extends LinearLayout implements HorizontalStepsV
         mStepsViewIndicator = (HorizontalStepsViewIndicator) rootView.findViewById(R.id.steps_indicator);
         mStepsViewIndicator.setOnDrawListener(this);
         mTextContainer = (RelativeLayout) rootView.findViewById(R.id.rl_text_container);
-        mTextContainer.removeAllViews();
     }
 
     /**
      * 设置显示的文字
      *
-     * @param texts
+     * @param stepsBeanList
      * @return
      */
-    public HorizontalStepView setStepViewTexts(List<String> texts)
+    public HorizontalStepView setStepViewTexts(List<StepBean> stepsBeanList)
     {
-        mTexts = texts;
-        mStepsViewIndicator.setStepNum(mTexts.size());
+        mStepBeanList = stepsBeanList;
+        mStepsViewIndicator.setStepNum(mStepBeanList);
         return this;
     }
 
-    /**
-     * 设置正在进行的position
-     *
-     * @param complectingPosition
-     * @return
-     */
-    public HorizontalStepView setStepsViewIndicatorComplectingPosition(int complectingPosition)
-    {
-        mComplectingPosition = complectingPosition;
-        mStepsViewIndicator.setComplectingPosition(complectingPosition);
-        return this;
-    }
 
     /**
      * 设置未完成文字的颜色
@@ -161,30 +152,55 @@ public class HorizontalStepView extends LinearLayout implements HorizontalStepsV
         return this;
     }
 
+    /**
+     * set textSize
+     *
+     * @param textSize
+     * @return
+     */
+    public HorizontalStepView setTextSize(int textSize)
+    {
+        if(textSize > 0)
+        {
+            mTextSize = textSize;
+        }
+        return this;
+    }
+
     @Override
     public void ondrawIndicator()
     {
-        List<Float> complectedXPosition = mStepsViewIndicator.getCircleCenterPointPositionList();
-        if(mTexts != null)
+        if(mTextContainer != null)
         {
-            for(int i = 0; i < mTexts.size(); i++)
+            mTextContainer.removeAllViews();
+            List<Float> complectedXPosition = mStepsViewIndicator.getCircleCenterPointPositionList();
+            if(mStepBeanList != null && complectedXPosition != null && complectedXPosition.size() > 0)
             {
-                TextView textView = new TextView(getContext());
-                textView.setText(mTexts.get(i));
-                textView.setX(complectedXPosition.get(i) - mStepsViewIndicator.getCircleRadius() - 10);//这里的-10是将文字进行调整居中，稍后再动态修改
-                textView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                for(int i = 0; i < mStepBeanList.size(); i++)
+                {
+                    mTextView = new TextView(getContext());
+                    mTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, mTextSize);
+                    mTextView.setText(mStepBeanList.get(i).getName());
+                    int spec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+                    mTextView.measure(spec, spec);
+                    // getMeasuredWidth
+                    int measuredWidth = mTextView.getMeasuredWidth();
+                    mTextView.setX(complectedXPosition.get(i) - measuredWidth / 2);
+                    mTextView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-                if(i <= mComplectingPosition)
-                {
-                    textView.setTypeface(null, Typeface.BOLD);
-                    textView.setTextColor(mComplectedTextColor);
-                } else
-                {
-                    textView.setTextColor(mUnComplectedTextColor);
+                    if(i <= mComplectingPosition)
+                    {
+                        mTextView.setTypeface(null, Typeface.BOLD);
+                        mTextView.setTextColor(mComplectedTextColor);
+                    } else
+                    {
+                        mTextView.setTextColor(mUnComplectedTextColor);
+                    }
+
+                    mTextContainer.addView(mTextView);
                 }
-
-                mTextContainer.addView(textView);
             }
         }
     }
+
 }
